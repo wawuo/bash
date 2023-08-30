@@ -1,4 +1,5 @@
 #!/bin/bash
+export PATH=$PATH:/sbin
 # 定义一个函数，用来获取网卡的IP地址，并格式化为0 =>'ip',的形式
 get_ip() {
   # 接收一个参数，表示网卡的名称
