@@ -60,15 +60,15 @@ replace_string_in_file() {
 # 扫描文件并打印sum值
 scan_file_and_print_sum() {
     sum=1
-    occ files:scan --path="$1"
+    /var/www/html/occ files:scan --path="$1"
     echo "sum: $sum"
     ((sum++))
 }
 
 # 启用或禁用应用
 enable_disable_app() {
-    occ app:disable "$1"
-    occ app:enable "$1"
+    /var/www/html/occ app:disable "$1"
+    /var/www/html/occ app:enable "$1"
 }
 
 # 监听文件移动事件并记录到ilist文件
