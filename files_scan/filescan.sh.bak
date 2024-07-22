@@ -1,0 +1,44 @@
+#!/bin/bash
+# 指明运行该脚本的解释器为 Bash
+
+# 监测文件夹的路径
+WATCH_FOLDER="/var/www/html/data/admin/files/"
+
+# 用于记录事件的日志
+EVENT_LOG="/var/log/nextcloud/实时更新.log"
+
+
+# 尝试停止监测进程
+pkill -f "inotifywait -m -e moved_to  -r ${WATCH_FOLDER}"
+# pkill -f "inotifywait -m --exclude '.*\.part' -e moved_to -e create -r "${WATCH_FOLDER}""
+
+# 启动监测进程
+nohup inotifywait  -m -e moved_to   -r "${WATCH_FOLDER}" |
+
+    while read path action file; do
+        if [ "${action}" = "MOVED_TO" ] || [ "${action}" = "CREATE" ]; then
+            # 更新文件时间戳
+            full_path="${path}/${file}"
+            touch "${full_path}"
+            
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - ${full_path} updated." >> "${EVENT_LOG}"
+            # echo "${full_path}"
+            # 去除不需要的文件路径部分
+            new_path="${full_path//\/var\/www\/html\/data\//}"
+            # echo "${new_path}"
+            # 执行 NextCloud 文件扫描命令
+            sleep 0.02
+            sudo -u www-data php /var/www/html/occ app:disable files_automatedtagging
+            sleep 0.02
+            #停用files_automatedtagging，因为会干扰files:scan
+            sudo -u www-data php /var/www/html/occ files:scan --path "${new_path}"  >> "${EVENT_LOG}" 2>&1
+            sleep 0.02
+            sudo -u www-data php /var/www/html/occ app:enable  files_automatedtagging
+            #启用files_automatedtagging。
+        fi
+    done &
+
+# 记录进程 ID
+sudo -u www-data php /var/www/html/occ app:enable  files_automatedtagging
+
+echo $! > /var/run/inotifywait.pid
